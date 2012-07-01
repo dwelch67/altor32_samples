@@ -1,0 +1,185 @@
+
+So what I am going to do with this processor is wander through the
+source and figure out what subset of the OpenRisc32 instructions are
+implemented.   As well as simply learn the instruction set.
+
+altor32_defs.v (../altor32 directory) contains the defines for the
+opcodes supported by this processor.  See the isa.txt file in this
+directory which takes these defines and the or32 documentation and
+lists the instructions.  Is every nuance of each instruction implemented?
+Will see.
+
+The altor32 project comes with an example binary for the software
+simulator and to run on the verilator based rtl simulation.  What we
+find is the simulator will end if break_o is asserted
+
+    if (_stop_pc == top->dbg_pc_o || top->break_o)
+        break;
+
+Which we get from the l.trap instruction
+
+    `INST_OR32_TRAP: // l.trap
+    begin
+       v_exception = 1'b1;
+       v_vector = `VECTOR_TRAP;
+       break_o <= 1'b1;
+    end
+
+So we need to end with an l.trap to end the sim.
+
+The next thing we see before starting to code is
+
+parameter [31:0]    BOOT_VECTOR     = 32'h00000100;
+
+    unsigned int addr;
+
+    // Read file data in
+    int len = fread(buf, 1, size, f);
+    buf[len] = 0;
+
+    printf("Loading to 0x%x\n", loadAddr);
+    for (addr=0;addr<len;addr++)
+        top_load(loadAddr + addr, buf[addr]);
+
+
+So the .bin file we feed the sim loads starting at address zero but
+the boot vector is 0x100, so we need to pad the binary with 0x100 bytes
+before our code.
+
+Now we need some tools.  For now just an assembler (and linker)
+(TODO, make my own assembler that is less complicated and easier to build)
+
+The OpenRISC folks provide a modified binutils.
+
+http://opencores.org/or1k/OpenRISC_GNU_tool_chain#binutils
+
+svn co http://opencores.org/ocsvn/openrisc/openrisc/trunk/gnu-src/binutils-2.20.1/
+cd binutils-2.20.1
+./configure --target=or32-elf --prefix=/somewhere
+make
+sudo make install
+
+You dont have to use the --prefix, I prefer to, perhaps /opt/or32 for
+example.  Make is going to take a while.  Once made and installed then
+set your path
+
+PATH=/opt/or32/bin:$PATH
+
+Or whatever you put as the --prefix, add /bin if you didnt use --prefix
+then it should be in your path already.
+
+Now we can take what we have figured out and write our first program
+
+.space 0x100
+l.movhi r7,0
+l.addi r7,r7,1
+l.addi r7,r7,1
+l.trap 0
+l.nop
+l.nop
+
+Assuming it is named test.s these are the steps to build it into a
+.bin file.
+
+or32-elf-as test.s -o test.o
+or32-elf-ld -Ttext 0 test.o -o test.elf
+or32-elf-objcopy test.elf -O binary test.bin
+
+Using the software simulator:
+
+../or32-sim/or32-sim -t -f test.bin
+S 00000100: 00000000 l.j     0                                      flag: 0
+S 00000100: 18e00000 l.movhi r7,0            r7         = 00000000  flag: 0
+S 00000100: 18e00000 l.movhi r7,0            r7         = 00000000  flag: 0
+S 00000104: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000001  flag: 0
+S 00000108: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000002  flag: 0
+S 0000010c: 21000000 l.trap                                         flag: 0
+
+It appears the pipeline starts out with zeros.  Perhaps the l.j causes the
+movhi to run twice, not sure yet.  We definitely see that it does get up
+and running and our code runs as desired.  If you run this in the
+verilog simulation you see the same behavior (dig down into the cpu then
+look at the registers and see r7 increment).
+
+We see there is an l.jal instruction which leads us to think this might
+be a mips or mips like processor.  Does that mean the instruction after
+the branch executes?  lets find out.
+
+.space 0x100
+l.movhi r6,0
+l.movhi r7,0
+l.addi r7,r7,1
+l.j over
+l.addi r6,r6,1
+over:
+l.addi r7,r7,1
+l.trap 0
+l.nop
+l.nop
+
+S 00000100: 00000000 l.j     0                                      flag: 0
+S 00000100: 18c00000 l.movhi r6,0            r6         = 00000000  flag: 0
+S 00000100: 18c00000 l.movhi r6,0            r6         = 00000000  flag: 0
+S 00000104: 18e00000 l.movhi r7,0            r7         = 00000000  flag: 0
+S 00000108: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000001  flag: 0
+S 0000010c: 00000002 l.j     0x2                                    flag: 0
+S 00000110: 9cc60001 l.addi  r6,r6,0x1       r6         = 00000001  flag: 0
+S 00000114: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000002  flag: 0
+S 00000118: 21000000 l.trap                                         flag: 0
+
+Yep, looks like it does execute the instruction after the branch.
+
+Now if we can determine anything about endianness...
+
+.space 0x100
+l.movhi r6,0
+l.movhi r7,0
+l.sw 0(r6),r6
+l.addi r7,r7,1
+l.addi r7,r7,1
+l.sb 0(r6),r7
+l.lws r3,0(r6)
+l.lwz r4,0(r6)
+l.trap 0
+l.nop
+l.nop
+
+S 00000100: 00000000 l.j     0                                      flag: 0
+S 00000100: 18c00000 l.movhi r6,0            r6         = 00000000  flag: 0
+S 00000100: 18c00000 l.movhi r6,0            r6         = 00000000  flag: 0
+S 00000104: 18e00000 l.movhi r7,0            r7         = 00000000  flag: 0
+S 00000108: d4063000 l.sw    0x0(r6),r6      [00000000] = 00000000  flag: 0
+S 0000010c: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000001  flag: 0
+S 00000110: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000002  flag: 0
+S 00000114: d8063800 l.sb    0x0(r6),r7      [00000000] = 02  flag: 0
+S 00000118: 88660000 l.lws   r3,0x0(r6)      r3         = 02000000  flag: 0
+S 0000011c: 84860000 l.lwz   r4,0x0(r6)      r4         = 02000000  flag: 0
+S 00000120: 21000000 l.trap                                         flag: 0
+
+So that looks like big endian.
+
+The next curiocity is that you have a long list of set flag instructions
+set flat if equal, set flag if greater than unsigned, etc.  Well the
+add instruction, the first one listed in the or32 arch manual says this:
+
+rD[31:0] <- rA[31:0] + rB[31:0]
+SR[CY]   <- carry
+SR[OV]   <- overflow
+
+The verilog has these defines
+
+`define OR32_SR_CY                               10
+`define OR32_SR_OV                               11
+
+But grepping shows that they are not used.
+
+lws and lwz, for a 32 bit processor a bit silly to not have a lw.
+the sign extension only applies to a 64 bit processor, but gnu as didnt
+accept an lw.  altor32, treats them the same, both are the same.
+
+   `INST_OR32_LWZ, `INST_OR32_LWS: // l.lwz l.lws
+        wb_v_reg_result = mem_data_in_i;
+
+set flag...
+
+

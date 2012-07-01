@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim
+END
+test_firmware.bin
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/test_firmware.bin
+END
+getopt_win32.c
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim/getopt_win32.c
+END
+main.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim/main.cpp
+END
+or32-sim.sln
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/or32-sim.sln
+END
+or32.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim/or32.cpp
+END
+or32_isa.h
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim/or32_isa.h
+END
+or32_inst_dump.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim/or32_inst_dump.cpp
+END
+getopt_win32.h
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/getopt_win32.h
+END
+README.txt
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/README.txt
+END
+or32.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/ocsvn/altor32/!svn/ver/6/altor32/trunk/or32-sim/or32.h
+END
+makefile
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/makefile
+END
+or32-sim.vcproj
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/or32-sim.vcproj
+END
+or32_inst_dump.h
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/ocsvn/altor32/!svn/ver/2/altor32/trunk/or32-sim/or32_inst_dump.h
+END

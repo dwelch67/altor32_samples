@@ -1,0 +1,159 @@
+
+Figuring this out by reading the code (verilog), and comparing to the
+openrisc32 documentation.
+
+32 register r0 to r31.  r0 is always zero when read, you can encode
+it as a destination but you cant write to r0.
+r1 stack pointer, r2 frame pointer, r9 link register.
+
+//-----------------------------------------------------------------
+// ALU Instructions
+//-----------------------------------------------------------------
+`define INST_OR32_ALU                            8'h38
+`define INST_OR32_ADD                            8'h00
+`define INST_OR32_AND                            8'h03
+`define INST_OR32_OR                             8'h04
+`define INST_OR32_SLL                            8'h08
+`define INST_OR32_SRA                            8'h28
+`define INST_OR32_SRL                            8'h18
+`define INST_OR32_SUB                            8'h02
+`define INST_OR32_XOR                            8'h05
+
+10987654321098765432109876543210
+111000DDDDDAAAAABBBBB-00----0000 l.add rd,ra,rb
+111000DDDDDAAAAABBBBB-00----0011 l.and rd,ra,rb
+111000DDDDDAAAAABBBBB-00----0100 l.or  rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--1000 l.sll rd,ra,rb
+111000DDDDDAAAAABBBBB-0010--1000 l.sra rd,ra,rb
+111000DDDDDAAAAABBBBB-0001--1000 l.srl rd,ra,rb
+111000DDDDDAAAAABBBBB-00----0010 l.sub rd,ra,rb
+111000DDDDDAAAAABBBBB-00----0101 l.xor rd,ra,rb
+
+//-----------------------------------------------------------------
+// INST_OR32_SHIFTI Instructions
+//-----------------------------------------------------------------
+`define INST_OR32_SHIFTI                         8'h2E
+`define INST_OR32_SLLI                           2'b00
+`define INST_OR32_SRAI                           2'b10
+`define INST_OR32_SRLI                           2'b01
+
+10987654321098765432109876543210
+101110DDDDDAAAAA--------00LLLLLL l.slli rd,ra,L
+101110DDDDDAAAAA--------10LLLLLL l.srai rd,ra,L
+101110DDDDDAAAAA--------01LLLLLL l.srli rd,ra,L
+
+//-----------------------------------------------------------------
+// General Instructions
+//-----------------------------------------------------------------
+`define INST_OR32_ADDI                           8'h27
+`define INST_OR32_ANDI                           8'h29
+`define INST_OR32_BF                             8'h04
+`define INST_OR32_BNF                            8'h03
+`define INST_OR32_J                              8'h00
+`define INST_OR32_JAL                            8'h01
+`define INST_OR32_JALR                           8'h12
+`define INST_OR32_JR                             8'h11
+`define INST_OR32_LBS                            8'h24
+`define INST_OR32_LHS                            8'h26
+`define INST_OR32_LWS                            8'h22
+`define INST_OR32_LBZ                            8'h23
+`define INST_OR32_LHZ                            8'h25
+`define INST_OR32_LWZ                            8'h21
+`define INST_OR32_MFSPR                          8'h2D
+`define INST_OR32_MOVHI                          8'h06
+`define INST_OR32_MTSPR                          8'h30
+`define INST_OR32_NOP                            8'h05
+`define INST_OR32_ORI                            8'h2A
+`define INST_OR32_RFE                            8'h09
+`define INST_OR32_SB                             8'h36
+`define INST_OR32_SH                             8'h37
+`define INST_OR32_SW                             8'h35
+`define INST_OR32_XORI                           8'h2B
+
+addi, andi, etc immediate is sign extended.
+
+10987654321098765432109876543210
+100111DDDDDAAAAAIIIIIIIIIIIIIIII l.addi rd,ra,simm
+101001DDDDDAAAAAKKKKKKKKKKKKKKKK l.andi rd,ra,simm
+000100NNNNNNNNNNNNNNNNNNNNNNNNNN l.bf N
+000011NNNNNNNNNNNNNNNNNNNNNNNNNN l.bnf N
+000000NNNNNNNNNNNNNNNNNNNNNNNNNN l.j N
+000001NNNNNNNNNNNNNNNNNNNNNNNNNN l.jal N
+010010----------BBBBB----------- l.jalr rb
+010001----------BBBBB----------- l.jr rb
+100100DDDDDAAAAAIIIIIIIIIIIIIIII l.lbs rd,simm(ra)
+100110DDDDDAAAAAIIIIIIIIIIIIIIII l.lhs rd,simm(ra)
+100010DDDDDAAAAAIIIIIIIIIIIIIIII l.lws rd,simm(ra)
+100011DDDDDAAAAAIIIIIIIIIIIIIIII l.lbz rd,simm(ra)
+100101DDDDDAAAAAIIIIIIIIIIIIIIII l.lhz rd,simm(ra)
+100001DDDDDAAAAAIIIIIIIIIIIIIIII l.lwz rd,simm(ra)
+101101DDDDDAAAAAKKKKKKKKKKKKKKKK l.mfspr rd,ra,K  spr(ra OR K)
+000110DDDDD----0KKKKKKKKKKKKKKKK l.movhi rd,zimm
+110000KKKKKAAAAABBBBBKKKKKKKKKKK l.mtspr ra,rb,K
+00010101--------KKKKKKKKKKKKKKKK l.nop imm
+101010DDDDDAAAAAKKKKKKKKKKKKKKKK l.ori rd,ra,zimm
+001001-------------------------- l.rfe
+110110IIIIIAAAAABBBBBIIIIIIIIIII l.sb simm(ra),rb
+110111IIIIIAAAAABBBBBIIIIIIIIIII l.sh simm(ra),rb
+110101IIIIIAAAAABBBBBIIIIIIIIIII l.sw simm(ra),rb
+101011DDDDDAAAAAIIIIIIIIIIIIIIII l.xori rd,ra,simm
+
+
+//-----------------------------------------------------------------
+// Set Flag Instructions
+//-----------------------------------------------------------------
+`define INST_OR32_SFXX                           8'h2F opcode
+`define INST_OR32_SFXXI                          8'h39 opcode
+`define INST_OR32_SFEQ                           16'h0720
+`define INST_OR32_SFEQI                          16'h05E0
+`define INST_OR32_SFGES                          16'h072B
+`define INST_OR32_SFGESI                         16'h05EB
+`define INST_OR32_SFGEU                          16'h0723
+`define INST_OR32_SFGEUI                         16'h05E3
+`define INST_OR32_SFGTS                          16'h072A
+`define INST_OR32_SFGTSI                         16'h05EA
+`define INST_OR32_SFGTU                          16'h0722
+`define INST_OR32_SFGTUI                         16'h05E2
+`define INST_OR32_SFLES                          16'h072D
+`define INST_OR32_SFLESI                         16'h05ED
+`define INST_OR32_SFLEU                          16'h0725
+`define INST_OR32_SFLEUI                         16'h05E5
+`define INST_OR32_SFLTS                          16'h072C
+`define INST_OR32_SFLTSI                         16'h05EC
+`define INST_OR32_SFLTU                          16'h0724
+`define INST_OR32_SFLTUI                         16'h05E4
+`define INST_OR32_SFNE                           16'h0721
+`define INST_OR32_SFNEI                          16'h05E1
+
+
+
+11100100000AAAAABBBBB----------- l.sfeq ra,rb
+11100101011AAAAABBBBB----------- l.sfges ra,rb
+11100100011AAAAABBBBB----------- l.sfgeu ra,rb
+11100101010AAAAABBBBB----------- l.sfgts ra,rb
+11100100010AAAAABBBBB----------- l.sfgtu ra,rb
+11100101101AAAAABBBBB----------- l.sfles ra,rb
+11100100101AAAAABBBBB----------- l.sfleu ra,rb
+11100101100AAAAABBBBB----------- l.sflts ra,rb
+11100100100AAAAABBBBB----------- l.sfltu ra,rb
+11100100001AAAAABBBBB----------- l.sfne ra,rb
+10111100000AAAAAIIIIIIIIIIIIIIII l.sfeqi ra,simm
+10111101011AAAAAIIIIIIIIIIIIIIII l.sfgesi ra,simm
+10111100011AAAAAIIIIIIIIIIIIIIII l.sfgeui ra,simm
+10111101010AAAAAIIIIIIIIIIIIIIII l.sfgtsi ra,simm
+10111100010AAAAAIIIIIIIIIIIIIIII l.sfgtui ra,simm
+10111101101AAAAAIIIIIIIIIIIIIIII l.sflesi ra,simm
+10111100101AAAAAIIIIIIIIIIIIIIII l.sfleui ra,simm
+10111101100AAAAAIIIIIIIIIIIIIIII l.sfltsi ra,simm
+10111100100AAAAAIIIIIIIIIIIIIIII l.sfltui ra,simm
+10111100001AAAAAIIIIIIIIIIIIIIII l.sflnei ra,simm
+
+//-----------------------------------------------------------------
+// Misc Instructions
+//-----------------------------------------------------------------
+`define INST_OR32_MISC                           8'h08 opcode
+`define INST_OR32_SYS                            8'h20
+`define INST_OR32_TRAP                           8'h21
+
+0010000000000000KKKKKKKKKKKKKKKK l.sys k
+0010000100000000KKKKKKKKKKKKKKKK l.trap k
