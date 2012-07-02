@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------
-//                           AltOR32 
-//              Alternative Lightweight OpenRisc 
+//                           AltOR32
+//              Alternative Lightweight OpenRisc
 //                            V0.1
 //                     Ultra-Embedded.com
 //                   Copyright 2011 - 2012
@@ -9,34 +9,34 @@
 //
 //                       License: LGPL
 //
-// If you would like a version with a different license for use 
-// in commercial projects please contact the above email address 
+// If you would like a version with a different license for use
+// in commercial projects please contact the above email address
 // for more details.
 //-----------------------------------------------------------------
 //
 // Copyright (C) 2011 - 2012 Ultra-Embedded.com
 //
-// This source file may be used and distributed without         
-// restriction provided that this copyright statement is not    
-// removed from the file and that any derivative work contains  
-// the original copyright notice and the associated disclaimer. 
+// This source file may be used and distributed without
+// restriction provided that this copyright statement is not
+// removed from the file and that any derivative work contains
+// the original copyright notice and the associated disclaimer.
 //
-// This source file is free software; you can redistribute it   
-// and/or modify it under the terms of the GNU Lesser General   
-// Public License as published by the Free Software Foundation; 
-// either version 2.1 of the License, or (at your option) any   
-// later version.                                               
+// This source file is free software; you can redistribute it
+// and/or modify it under the terms of the GNU Lesser General
+// Public License as published by the Free Software Foundation;
+// either version 2.1 of the License, or (at your option) any
+// later version.
 //
-// This source is distributed in the hope that it will be       
-// useful, but WITHOUT ANY WARRANTY; without even the implied   
-// warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
-// PURPOSE.  See the GNU Lesser General Public License for more 
-// details.                                                     
+// This source is distributed in the hope that it will be
+// useful, but WITHOUT ANY WARRANTY; without even the implied
+// warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+// PURPOSE.  See the GNU Lesser General Public License for more
+// details.
 //
-// You should have received a copy of the GNU Lesser General    
-// Public License along with this source; if not, write to the 
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
-// Boston, MA  02111-1307  USA              
+// You should have received a copy of the GNU Lesser General
+// Public License along with this source; if not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+// Boston, MA  02111-1307  USA
 //-----------------------------------------------------------------
 
 //-----------------------------------------------------------------
@@ -47,12 +47,12 @@
 //-----------------------------------------------------------------
 // Module
 //-----------------------------------------------------------------
-module altor32_alu 
-( 
-    input_a, 
-    input_b, 
-    func, 
-    result 
+module altor32_alu
+(
+    input_a,
+    input_b,
+    func,
+    result
 );
 
 //-----------------------------------------------------------------
@@ -72,21 +72,21 @@ reg [31:0]      result;
 // ALU
 //-----------------------------------------------------------------
 always @ (func or input_a or input_b )
-begin 
+begin
    case (func)
-       `ALU_SHIFTL :        result = shift_left(input_a, input_b);
-       `ALU_SHIFTR :        result = shift_right(input_a, input_b);
-       `ALU_SHIRTR_ARITH:   result = shift_right_arith(input_a, input_b);
+       `ALU_SHIFTL :        result = shift_left(input_a, input_b[4:0]);
+       `ALU_SHIFTR :        result = shift_right(input_a, input_b[4:0]);
+       `ALU_SHIRTR_ARITH:   result = shift_right_arith(input_a, input_b[4:0]);
        `ALU_ADD :           result = (input_a + input_b);
        `ALU_SUB :           result = (input_a - input_b);
        `ALU_AND :           result = (input_a & input_b);
        `ALU_OR :            result = (input_a | input_b);
        `ALU_XOR :           result = (input_a ^ input_b);
-       default : 
+       default :
             result = 32'h00000000;
    endcase
 end
-    
+
 `include "altor32_funcs.v"
 
 endmodule
