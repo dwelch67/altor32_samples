@@ -20,14 +20,14 @@ r1 stack pointer, r2 frame pointer, r9 link register.
 `define INST_OR32_XOR                            8'h05
 
 10987654321098765432109876543210
-111000DDDDDAAAAABBBBB-00----0000 l.add rd,ra,rb
-111000DDDDDAAAAABBBBB-00----0011 l.and rd,ra,rb
-111000DDDDDAAAAABBBBB-00----0100 l.or  rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0000 l.add rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0011 l.and rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0100 l.or  rd,ra,rb
 111000DDDDDAAAAABBBBB-0000--1000 l.sll rd,ra,rb
 111000DDDDDAAAAABBBBB-0010--1000 l.sra rd,ra,rb
 111000DDDDDAAAAABBBBB-0001--1000 l.srl rd,ra,rb
-111000DDDDDAAAAABBBBB-00----0010 l.sub rd,ra,rb
-111000DDDDDAAAAABBBBB-00----0101 l.xor rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0010 l.sub rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0101 l.xor rd,ra,rb
 
 //-----------------------------------------------------------------
 // INST_OR32_SHIFTI Instructions
@@ -161,13 +161,180 @@ addi, andi, etc immediate is sign extended.
 
 Let's examine the source code for this processor.
 
+Grep for INST_OR32_ADD
+
+
+           // Execute instruction
+           case (v_inst)
+               `INST_OR32_ALU :
+               begin
+                   case (v_alu_op)
+                       `INST_OR32_ADD: // l.add
+                       begin
+                           alu_func <= `ALU_ADD;
+                           alu_a <= v_reg_ra;
+                           alu_b <= v_reg_rb;
+                           v_write_rd = 1'b1;
+                       end
+
+
+Okay so we need to know what v_inst, v_alu_op, v_reg_ra, v_reg_rb and v_write_rd
+are.
 
 
 
 
 
+So sniffing around we really want to start here:
+
+   else if ((en_i == 1'b1) && (r_state == STATE_FETCH))
+   begin
+       // Decode opcode in-order to perform register accesses
+       r_opcode <= mem_data_in_i;
+       r_rd     <= mem_data_in_i[25:21];
+       r_ra     <= mem_data_in_i[20:16];
+       r_rb     <= mem_data_in_i[15:11];
+
+Then look at this
+
+      v_mem_data_in        = r_opcode;
+
+and this
+
+    v_inst = {2'b00,v_mem_data_in[31:26]};
+
+    `define INST_OR32_ALU                            8'h38
+    `define INST_OR32_ADD                            8'h00
+
+    v_alu_op = {v_mem_data_in[9:6],v_mem_data_in[3:0]};
+
+and this
+
+           v_reg_ra             = r_reg_ra;
+           v_reg_rb             = r_reg_rb;
 
 
+So from an opcode perspective if bits 31:26 of the instruction
+are 0b111000 (0x38) then it is an alu instruction, if an
+alu instruction then look at bits [9:6] and [3:0] as 8 bits if those
+bits are 0x00 then it is an add instruction.
+
+If an add instruction then r_rd comes from bits [25:21] in the instruction
+r_ra from 20:16 and r_rb from 15:11.  r_ra and r_rb are addresses into
+the register memory
+
+altor32_regfile_sim
+reg_bank
+(
+    // Clocking
+    .clk_i(clk_i),
+    .rst_i(rst_i),
+    .en_i(1'b1),
+    .wr_i(r_writeback),
+
+    // Tri-port
+    .rs_i(r_ra),
+    .rt_i(r_rb),
+    .rd_i(r_rd_wb),
+    .reg_rs_o(r_reg_ra),
+    .reg_rt_o(r_reg_rb),
+    .reg_rd_i(r_reg_rd)
+);
+
+returning as 32 bit values r_reg_ra and r_reg_rb which become v_reg_ra
+and v_reg_rb.
+
+       `INST_OR32_ADD: // l.add
+       begin
+           alu_func <= `ALU_ADD;
+           alu_a <= v_reg_ra;
+           alu_b <= v_reg_rb;
+           v_write_rd = 1'b1;
+       end
+
+so now we see alu_func and alu_a and alu_b are set to something along
+with v_write_rd.
+
+`define ALU_ADD                                 4'b0100
+
+Which goes into this
+
+// ALU
+altor32_alu alu
+(
+    .input_a(alu_a),
+    .input_b(alu_b),
+    .func(alu_func),
+    .result(alu_result)
+);
+
+
+       r_reg_rd <= alu_result;
+
+which is in the altor32_alu.v file and as expected:
+
+       `ALU_ADD :           result = (input_a + input_b);
+
+This is fun, so if we dont want to write to a register then we
+set the register we WANT to write to to be r0 which is a read only
+register.
+
+           // No writeback required?
+           if (v_write_rd == 1'b0)
+           begin
+               // Target register is R0 which is read-only
+               r_rd_wb <= 5'b00000;
+           end
+
+So r_rd_wb is going to get written to no matter what.  And the default
+rd address, if we dont change it is r_rd which is instruction bits 25:21
+
+           r_rd_wb              <= r_rd;
+
+
+So from all that we have learned that
+
+33222222222211111111110000000000
+10987654321098765432109876543210
+111000DDDDDAAAAABBBBB-0000--0000 l.add rd,ra,rb
+
+bits 31:26 are 0b111000 for an ALU instruction then you also need
+9:6 to be 0b0000 and 3:0 to be 0b0000 to specify an add instruction.
+Then the operands are ra the register being specified in bits 20:16 and
+rb register number coming from bits 15:11.  The result destination register
+is specified in bits 25:21.
+
+Now I have waved my hand over all the state machine timing that links
+all of these steps in a row such that each decode step and reading and
+writing of the register files, the alu operation itself, etc all happen
+in the right order.
+
+add, and, or and xor all work this way.
+
+sll, sra and srl need a shift value, which for the register based
+instruction is extracted from the rb register.
+
+       `INST_OR32_SLL: // l.sll
+       begin
+           alu_func <= `ALU_SHIFTL;
+           alu_a <= v_reg_ra;
+           alu_b <= v_shift_val;
+           v_write_rd = 1'b1;
+       end
+
+       v_shift_val          = {27'b00,v_reg_rb[4:0]};
+
+Being 32 bit registers you can only shift 31 bits (32 shifts all
+the bits off the end).  0-31 means 5 bits.  The alu logic wants to
+see a 32 bit operand so we simply pad the upper bits of the operand
+into the alu with zeros.
+
+       `ALU_SHIFTL :        result = shift_left(input_a, input_b);
+
+The shift_left logic only cares about operand bits 4:0 anyway.
+
+sll, sra and srl all work this way (Taking 5 bits from rb and padding
+as it goes to the alu).
 
 
 

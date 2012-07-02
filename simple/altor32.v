@@ -378,10 +378,10 @@ begin
            v_reg_rb             = r_reg_rb;
 
            // Shift ammount (from register[rb])
-           v_shift_val          = {26'b00,v_reg_rb[5:0]};
+           v_shift_val          = {27'b00,v_reg_rb[4:0]};
 
            // Shift ammount (from immediate)
-           v_shift_imm          = {26'b00,v_imm[5:0]};
+           v_shift_imm          = {27'b00,v_imm[4:0]};
 
            // MTSPR/MFSPR operand
            v_mxspr_imm          =  (v_reg_ra[15:0] | {5'b000000,v_mem_data_in[10:0]});
