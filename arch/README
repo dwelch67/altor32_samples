@@ -1,13 +1,17 @@
 
 So what I am going to do with this processor is wander through the
 source and figure out what subset of the OpenRisc32 instructions are
-implemented.   As well as simply learn the instruction set.
+implemented.   As well as simply learn the instruction set.  Even better
+perhaps try to document this processor here since it really its own
+entity separate from the OpenRISC project.
 
 altor32_defs.v (../altor32 directory) contains the defines for the
 opcodes supported by this processor.  See the isa.txt file in this
 directory which takes these defines and the or32 documentation and
-lists the instructions.  Is every nuance of each instruction implemented?
-Will see.
+lists the instructions.  Is every nuance of the or32 instruction set
+implemented?  I dont think so, will see.  Being a separate processor
+from the or32 project, does it matter if every nuance is implemented?
+No, it doesnt matter.
 
 The altor32 project comes with an example binary for the software
 simulator and to run on the verilator based rtl simulation.  What we
@@ -66,7 +70,7 @@ set your path
 PATH=/opt/or32/bin:$PATH
 
 Or whatever you put as the --prefix, add /bin if you didnt use --prefix
-then it should be in your path already.
+then it should be in your path already and you may not need to do this.
 
 Now we can take what we have figured out and write our first program
 
@@ -96,10 +100,10 @@ S 00000108: 9ce70001 l.addi  r7,r7,0x1       r7         = 00000002  flag: 0
 S 0000010c: 21000000 l.trap                                         flag: 0
 
 It appears the pipeline starts out with zeros.  Perhaps the l.j causes the
-movhi to run twice, not sure yet.  We definitely see that it does get up
-and running and our code runs as desired.  If you run this in the
-verilog simulation you see the same behavior (dig down into the cpu then
-look at the registers and see r7 increment).
+movhi to run twice, not sure yet.  We definitely see that after those
+first two instructions, it does get up and running and our code runs as
+desired.  If you run this in the verilog simulation you see the same
+execution startup, with the 0x100 address instruction executing twice.
 
 We see there is an l.jal instruction which leads us to think this might
 be a mips or mips like processor.  Does that mean the instruction after
@@ -159,19 +163,23 @@ S 00000120: 21000000 l.trap                                         flag: 0
 So that looks like big endian.
 
 The next curiocity is that you have a long list of set flag instructions
-set flat if equal, set flag if greater than unsigned, etc.  Well the
-add instruction, the first one listed in the or32 arch manual says this:
+set flat if equal, set flag if greater than unsigned, etc.  Most of
+your conditionals likely come from those, the or32 arch manual mentions
+that the add instruction modifies some other bits in the status register.
 
 rD[31:0] <- rA[31:0] + rB[31:0]
 SR[CY]   <- carry
 SR[OV]   <- overflow
 
-The verilog has these defines
+The verilog for altor32 has these defines
 
 `define OR32_SR_CY                               10
 `define OR32_SR_OV                               11
 
-But grepping shows that they are not used.
+But grepping shows that they are not used.  So that implies the add is
+like the other alu operations and does not directly affect the status
+register, to affect the status register (other than the obvious write
+to it) use the "set flag" instructions.
 
 lws and lwz, for a 32 bit processor a bit silly to not have a lw.
 the sign extension only applies to a 64 bit processor, but gnu as didnt
@@ -180,6 +188,51 @@ accept an lw.  altor32, treats them the same, both are the same.
    `INST_OR32_LWZ, `INST_OR32_LWS: // l.lwz l.lws
         wb_v_reg_result = mem_data_in_i;
 
-set flag...
+I would prefer to see l.lw alias l.lwz, maybe I will dig into binutils
+and add that.
+
+So the register based alu instructions are very straight forward.  Like
+mips but unlike most other processors you dont use flags on the alu
+operations for future conditional branches.  Making these simple and
+straight forward.  Also note we dont have a multiply or divide, those
+chew up chip real estate which is better recovered with software
+solutions.
+
+33222222222211111111110000000000
+10987654321098765432109876543210
+111000DDDDDAAAAABBBBB-0000--0000 l.add rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0011 l.and rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0100 l.or  rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--1000 l.sll rd,ra,rb
+111000DDDDDAAAAABBBBB-0010--1000 l.sra rd,ra,rb
+111000DDDDDAAAAABBBBB-0001--1000 l.srl rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0010 l.sub rd,ra,rb
+111000DDDDDAAAAABBBBB-0000--0101 l.xor rd,ra,rb
+
+The immediate instructions have some differences amongst I use simm
+to indicate signed immediate (sign extended) and zimm to indicate
+unsigned immediate (zero extended).  It is important to note that
+the logical operations andi, ori and xori do not match, andi and ori
+use a zero extended immediate, xori uses a sign extended immediate.
+Like the lwz and lws, talking about sign extension with movhi is a
+bit silly for a 32 bit processor, but the or32 folks do it anyway because
+they are trying to document both 32 and 64 in one shot.
+
+33222222222211111111110000000000
+10987654321098765432109876543210
+100111DDDDDAAAAAIIIIIIIIIIIIIIII l.addi rd,ra,simm
+101001DDDDDAAAAAKKKKKKKKKKKKKKKK l.andi rd,ra,zimm
+000110DDDDD----0KKKKKKKKKKKKKKKK l.movhi rd,zimm
+101010DDDDDAAAAAKKKKKKKKKKKKKKKK l.ori rd,ra,zimm
+101011DDDDDAAAAAIIIIIIIIIIIIIIII l.xori rd,ra,simm
+
+For this processor the movhi instruction takes the immediate as is and
+puts it in the upper bits of the register with the lower bits being zero.
+
+       `INST_OR32_MOVHI: // l.movhi
+       begin
+           v_reg_result = {v_imm,16'h0000};
+           v_write_rd = 1'b1;
+       end
 
 

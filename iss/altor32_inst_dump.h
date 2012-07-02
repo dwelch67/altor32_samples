@@ -1,7 +1,7 @@
 #ifndef _OR32_INST_DUMP_H_
 #define _OR32_INST_DUMP_H_
 
-#include "or32_isa.h"
+#include "altor32_isa.h"
 
 //-----------------------------------------------------------------
 // Prototypes:

@@ -3,14 +3,14 @@
 ###############################################################################
 
 # Target
-TARGET		= or32-sim
+TARGET		= altor32-sim
 
 # Options
 CFLAGS	    = 
 LDFLAGS     = 
 
 # Source Files
-OBJ = main.o or32.o or32_inst_dump.o
+OBJ = main.o altor32.o altor32_inst_dump.o
 
 ###############################################################################
 # Rules
@@ -26,6 +26,6 @@ clean:
 %.o : %.cpp
 	g++ -c $(CFLAGS) $< -o $@
 
-$(TARGET): $(OBJ) makefile
+$(TARGET): $(OBJ) Makefile
 	g++ $(LDFLAGS) $(LIBS) $(OBJ) -o $@
 

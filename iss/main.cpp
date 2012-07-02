@@ -8,14 +8,14 @@
 //                         Email: admin@ultra-embedded.com
 //
 //                                License: GPL
-//  Please contact the above address if you would like a version of this 
-//  software with a more permissive license for use in closed source commercial 
+//  Please contact the above address if you would like a version of this
+//  software with a more permissive license for use in closed source commercial
 //  applications.
 //-----------------------------------------------------------------------------
 //
 // This file is part of AltOR32 OpenRisc Simulator.
 //
-// AltOR32 OpenRisc Simulator is free software; you can redistribute it and/or 
+// AltOR32 OpenRisc Simulator is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "or32.h"
+#include "altor32.h"
 
 #ifdef WIN32
 #include "getopt_win32.h"
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
                  break;
             case '?':
             default:
-                help = 1;   
+                help = 1;
                 break;
         }
     }
@@ -116,10 +116,10 @@ int main(int argc, char *argv[])
         fprintf (stderr,"-v 0xX          = Trace Mask\n");
         fprintf (stderr,"-b 0xnnnn       = Memory base address\n");
         fprintf (stderr,"-s 0xnnnn       = Memory size\n");
-        fprintf (stderr,"-l 0xnnnn       = Executable load address\n");     
-        fprintf (stderr,"-x 0xnnnn       = Executable boot address\n");     
+        fprintf (stderr,"-l 0xnnnn       = Executable load address\n");
+        fprintf (stderr,"-x 0xnnnn       = Executable boot address\n");
         fprintf (stderr,"-c nnnn         = Max instructions to execute\n");
- 
+
         exit(-1);
     }
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
                     cycles++;
 
                     if (max_cycles != -1 && max_cycles == cycles)
-                        break;                  
+                        break;
                 }
             }
             else
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
         }
         // Show execution stats
         sim->DumpStats();
-        
+
         if (sim->GetBreak())
         {
             printf("Exit code = %d\n", 0);

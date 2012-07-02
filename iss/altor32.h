@@ -1,7 +1,7 @@
 #ifndef __OR32_H__
 #define __OR32_H__
 
-#include "or32_isa.h"
+#include "altor32_isa.h"
 
 //--------------------------------------------------------------------
 // Defines:
@@ -36,19 +36,19 @@ public:
 
     void                DumpStats(void);
 
-protected:  
+protected:
     void                Decode(void);
     void                Execute(void);
     void                WriteBack(void);
 
-protected:  
+protected:
     // Peripheral access
     virtual void        PeripheralReset(void) { }
     virtual void        PeripheralClock(void) { }
     virtual TRegister   PeripheralAccess(TAddress addr, TRegister data_in, TRegister wr, TRegister rd) { return 0; }
-    virtual bool	    PeripheralInterrupt(void) { return false; }
+    virtual bool        PeripheralInterrupt(void) { return false; }
 
-protected:  
+protected:
     // Execution monitoring
     virtual void        MonInstructionExecute(TAddress addr, TRegister instr) { }
     virtual void        MonDataLoad(TAddress addr, TRegister mask, TAddress value) { }
@@ -56,7 +56,7 @@ protected:
     virtual void        MonFault(TAddress addr, TRegister instr) { }
     virtual void        MonExit(void) { }
     virtual void        MonNop(TRegister imm);
-    
+
 private:
 
     // CPU Registers

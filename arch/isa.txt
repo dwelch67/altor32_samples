@@ -74,7 +74,7 @@ addi, andi, etc immediate is sign extended.
 
 10987654321098765432109876543210
 100111DDDDDAAAAAIIIIIIIIIIIIIIII l.addi rd,ra,simm
-101001DDDDDAAAAAKKKKKKKKKKKKKKKK l.andi rd,ra,simm
+101001DDDDDAAAAAKKKKKKKKKKKKKKKK l.andi rd,ra,zimm
 000100NNNNNNNNNNNNNNNNNNNNNNNNNN l.bf N
 000011NNNNNNNNNNNNNNNNNNNNNNNNNN l.bnf N
 000000NNNNNNNNNNNNNNNNNNNNNNNNNN l.j N
@@ -157,3 +157,22 @@ addi, andi, etc immediate is sign extended.
 
 0010000000000000KKKKKKKKKKKKKKKK l.sys k
 0010000100000000KKKKKKKKKKKKKKKK l.trap k
+
+
+Let's examine the source code for this processor.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

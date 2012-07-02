@@ -8,14 +8,14 @@
 //                         Email: admin@ultra-embedded.com
 //
 //                                License: GPL
-//  Please contact the above address if you would like a version of this 
-//  software with a more permissive license for use in closed source commercial 
+//  Please contact the above address if you would like a version of this
+//  software with a more permissive license for use in closed source commercial
 //  applications.
 //-----------------------------------------------------------------------------
 //
 // This file is part of AltOR32 OpenRisc Simulator.
 //
-// AltOR32 OpenRisc Simulator is free software; you can redistribute it and/or 
+// AltOR32 OpenRisc Simulator is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "or32_isa.h"
-#include "or32_inst_dump.h"
+#include "altor32_isa.h"
+#include "altor32_inst_dump.h"
 
 //-----------------------------------------------------------------
 // or32_instruction_to_string: Decode instruction to string
@@ -125,7 +125,7 @@ int or32_instruction_to_string(TRegister opcode, char *output, int max_len)
             }
         break;
 
-        case INST_OR32_ADDI: // l.addi 
+        case INST_OR32_ADDI: // l.addi
             if ((int)v_imm_int32 < 0)
                 sprintf(output, "l.addi  r%d,r%d,%d", v_rd, v_ra, v_imm_int32);
             else
@@ -348,7 +348,7 @@ int or32_instruction_to_string(TRegister opcode, char *output, int max_len)
                 sprintf(output, "l.sw    0x%x(r%d),r%d", (int)v_store_imm, v_ra, v_rb);
         break;
 
-        case INST_OR32_MISC: 
+        case INST_OR32_MISC:
             switch (opcode >> 24)
             {
                 case INST_OR32_SYS: // l.sys

@@ -8,14 +8,14 @@
 //                         Email: admin@ultra-embedded.com
 //
 //                                License: GPL
-//  Please contact the above address if you would like a version of this 
-//  software with a more permissive license for use in closed source commercial 
+//  Please contact the above address if you would like a version of this
+//  software with a more permissive license for use in closed source commercial
 //  applications.
 //-----------------------------------------------------------------------------
 //
 // This file is part of AltOR32 OpenRisc Simulator.
 //
-// AltOR32 OpenRisc Simulator is free software; you can redistribute it and/or 
+// AltOR32 OpenRisc Simulator is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
 // (at your option) any later version.
@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "or32.h"
-#include "or32_inst_dump.h"
+#include "altor32.h"
+#include "altor32_inst_dump.h"
 
 //-----------------------------------------------------------------
 // Defines:
@@ -54,7 +54,7 @@ OR32::OR32(unsigned int baseAddr, unsigned int len)
     Trace = 0;
 
     assert(Mem);
-    
+
     Reset();
 }
 //-----------------------------------------------------------------
@@ -99,7 +99,7 @@ void OR32::Reset(TRegister start_addr /*= VECTOR_RESET*/)
     Break = 0;
     BreakValue = 0;
     Trace = 0;
-    Cycle = 2;    
+    Cycle = 2;
 
     // Clear stats
     StatsMem = 0;
@@ -243,14 +243,14 @@ void OR32::Execute(void)
 
     TRegister v_alu_op = 0;
     TRegister v_shift_op = 0;
-    TRegister v_sfxx_op = 0;    
+    TRegister v_sfxx_op = 0;
 
     // Notify observers of instruction execution
     MonInstructionExecute(r_pc, r_opcode);
 
     StatsInstructions++;
 
-    DPRINTF(LOG_INST, ("%08x: %08x\n", r_pc, r_opcode));                
+    DPRINTF(LOG_INST, ("%08x: %08x\n", r_pc, r_opcode));
 
     // Decode opcode fields
     v_inst      = (r_opcode >> OR32_OPCODE_SHIFT) & OR32_OPCODE_MASK;
@@ -342,7 +342,7 @@ void OR32::Execute(void)
             }
         break;
 
-        case INST_OR32_ADDI: // l.addi 
+        case INST_OR32_ADDI: // l.addi
             v_reg_result = v_reg_ra + v_imm_int32;
             v_write_rd = 1;
         break;
@@ -486,7 +486,7 @@ void OR32::Execute(void)
             v_pc_next = r_epc;
             r_sr = r_esr;
             v_jmp = 1;
-            
+
             // TODO: Handle branch delay & next instruction flush
         break;
 
@@ -516,7 +516,7 @@ void OR32::Execute(void)
 
         case INST_OR32_SB: // l.sb
             mem_addr = v_reg_ra + (int)v_store_imm;
-            mem_offset = mem_addr & 0x3;            
+            mem_offset = mem_addr & 0x3;
             mem_rd = 0;
             switch (mem_offset)
             {
@@ -675,7 +675,7 @@ void OR32::Execute(void)
 
         case INST_OR32_SH: // l.sh
             mem_addr = v_reg_ra + (int)v_store_imm;
-            mem_offset = mem_addr & 0x3;            
+            mem_offset = mem_addr & 0x3;
             mem_rd = 0;
             switch (mem_offset)
             {
@@ -711,7 +711,7 @@ void OR32::Execute(void)
             StatsMem++;
         break;
 
-        case INST_OR32_MISC: 
+        case INST_OR32_MISC:
             switch (r_opcode >> 24)
             {
                 case INST_OR32_SYS: // l.sys
@@ -850,7 +850,7 @@ void OR32::WriteBack(void)
                 break;
         }
         break;
-        
+
     case INST_OR32_LHS: // l.lhs
         switch (mem_offset)
         {
@@ -896,7 +896,7 @@ void OR32::WriteBack(void)
     default:
         v_reg_result = r_reg_result;
         break;
-    }    
+    }
 
     // Decode instruction to full text?
     if (TRACE_ENABLED(LOG_OR1K))
@@ -995,7 +995,7 @@ bool OR32::Clock(void)
         mem_data_in = Mem[wordAddress];
     }
     // External / Peripheral memory
-    else 
+    else
     {
         mem_data_in = PeripheralAccess(mem_addr, mem_data_out, mem_wr, mem_rd);
     }
