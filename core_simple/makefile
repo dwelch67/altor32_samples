@@ -50,3 +50,5 @@ endif
  
 clean :                                                                                                  
 	-rm -rf $(BUILD_DIR)
+	-rm -f wave_dump.vcd
+

@@ -236,3 +236,209 @@ puts it in the upper bits of the register with the lower bits being zero.
        end
 
 
+
+
+---- system on chip (soc) ----
+
+there are peripherals in the rtl from the altor32 project.  Lets look
+at the system timer first.
+
+
+
+// Peripheral Interconnect
+soc_pif
+u2_soc
+(
+
+    .periph1_wr_o(timer_wr),
+
+so the timer is periph1
+
+
+in soc_pif.v the address decoder appears to work like this:
+
+always @ (io_addr_i or io_wr_i or io_rd_i or io_data_i)
+begin
+   // Decode 4-bit peripheral select
+   case (io_addr_i[11:8])
+
+   // Peripheral 0
+   4'h0 :
+   begin
+
+   // Peripheral 1
+   4'h1 :
+   begin
+
+   // Peripheral 2
+   4'h2 :
+   begin
+
+and it continues like that so the timer is in io memory space
+of
+
+0x.....100
+
+back up to alt_soc.v
+
+    .out2_addr_o(io_address),
+    .out2_data_o(io_data_w),
+    .out2_data_i(io_data_r),
+    .out2_wr_o(io_wr),
+    .out2_rd_o(io_rd),
+    .out2_pause_i(1'b0),
+
+
+   case (mem_addr_i[30:28])
+
+   3'b000 :
+   begin
+       out0_addr_o      = mem_addr_i;
+
+   3'b001 :
+   begin
+       out1_addr_o      = mem_addr_i;
+
+
+and so on.
+
+
+so that is memory space address? x010 for out2. which is I/O memory space
+
+0x20000100 is perhaps where the timer starts.
+
+What does the timer do?  There appear to be two timers, one is the
+systick timer, which looks to be counting milliseconds.
+
+reg [31:0]          systick_count;
+parameter  [31:0]   CLK_KHZ             = 12288;
+
+       if (systick_clk_count == CLK_KHZ)
+       begin
+           systick_count     <= (systick_count + 1);
+           systick_intr      <= 1'b1;
+           systick_clk_count <= 32'h00000000;
+       end
+       else
+           systick_clk_count <= (systick_clk_count + 1);
+
+Every 12288 processor clocks it increments this timer by one.
+
+systick_count is a 32 bit counter so it will just count and roll over,
+nice and simple.  Looks to be free running.
+
+Performing a read
+
+       if (rd_i == 1'b1)
+       begin
+           case (addr_i[7:0])
+
+           // 32-bit systick/1ms counter
+           `TIMER_SYSTICK_VAL :
+                data_o <= systick_count;
+
+           // Hi res timer (clock rate)
+           `TIMER_HIRES :
+                data_o <= hr_timer_cnt;
+
+
+`define TIMER_SYSTICK_VAL       8'h00
+`define TIMER_HIRES             8'h04
+
+so reading 0x20000100 that should read the systick timer and
+reading 0x20000104 should read the high resolution timer.
+
+the high res timer has two registers one the counter itself the other
+a match register
+
+       hr_timer_cnt     <= 32'h00000000;
+       hr_timer_match   <= 32'h00000000;
+
+the match register works like this, if not-zero and if the timer
+matches, the assert the interrupt line.
+
+       hr_timer_intr <= 1'b0;
+
+       if ((hr_timer_match != 32'h00000000) && (hr_timer_match == hr_timer_cnt))
+           hr_timer_intr <= 1'b1;
+
+       // Write Cycle
+       if (wr_i != 4'b0000)
+       begin
+           case (addr_i)
+
+           `TIMER_HIRES :
+                hr_timer_match <= data_i;
+
+If you write to offset 0x4 then it will write to the match register.
+
+Running this program
+
+.space 0x100
+l.movhi r6,0
+l.movhi r7,0
+l.movhi r5,0x2000
+
+loop:
+l.lwz r4,0x100(r5)
+l.andi r3,r4,0x1
+l.sfeq r3,r0
+l.bf loop
+
+l.addi r7,r7,1
+l.addi r7,r7,1
+l.trap 0
+l.nop
+l.nop
+
+It stays in the loop until the system tick timer changes from zero
+to one, the strange thing is that happens when systick_clk_count = 0xE000
+not when it is 0x3000.
+
+
+
+
+
+Lets figure the uart out...
+
+
+The uart is I/O peripheral 0
+
+    // Peripherals
+    .periph0_addr_o(uart_addr),
+    .periph0_data_o(uart_data_o),
+    .periph0_data_i(uart_data_i),
+    .periph0_wr_o(uart_wr),
+    .periph0_rd_o(uart_rd),
+
+So that means 0x20000000 base address
+
+`define UART_USR                8'h04
+`define UART_UDR                8'h08
+
+a write
+
+           `UART_UDR :
+           begin
+               uart_tx_data <= data_i[7:0];
+               uart_wr <= 1'b1;
+           end
+
+a read
+
+           `UART_USR :
+                data_o <= {27'h0000000, 1'b0, uart_tx_busy, 1'b0, 1'b0, uart_rx_avail};
+
+           `UART_UDR :
+           begin
+               data_o <= {24'h000000,uart_rx_data};
+               uart_rd <= 1'b1;
+           end
+
+
+So the status register, bit 0 is rx_available when set, bit 3 is tx busy when set.
+
+
+
+
+

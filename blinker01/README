@@ -1,0 +1,85 @@
+
+This is my first real example for the altor32 processor.  In particular
+this is for the complete systeom on chip, not just the processor.
+
+This processor uses the uart and the two timers, system and high res.
+It doesnt actually blink an led (we dont have one), instead on timer
+based intervals it prints stuff out the uart.
+
+For the moment the software simulator does not have a timer nor uart
+so this program will loop forever waiting for the system timer to change.
+
+Also note these are compiled using gnu tools.  The openrisc folks have
+modified versions of the gnu tools ready to build.
+
+http://opencores.org/or1k/OpenRISC_GNU_tool_chain#binutils
+
+svn co http://opencores.org/ocsvn/openrisc/openrisc/trunk/gnu-src/binutils-2.20.1/
+cd binutils-2.20.1
+./configure --target=or32-elf --prefix=/somewhere
+make
+sudo make install
+
+svn co http://opencores.org/ocsvn/openrisc/openrisc/trunk/gnu-src/gcc-4.5.1
+cd gcc-4.5.1
+./configure --target=or32-elf --prefix=/somewhere
+make all-gcc
+sudo make install-gcc
+
+you dont have to have a --prefix, if not it will place the files in
+/usr/bin or somewhere like that (in your path).  If you do use the
+--prefix then remember to put /somewhere/bin in your path.
+
+For the gcc step it is important to make all-gcc not make all.
+
+So far as I can tell r9 is the link register for jal instructions,
+basically l.jr r9 to return from a function call.  r3, r4, ... are
+the operands going into a function and r11 is the register used for
+the return from a function, basically:
+
+void PUT32 ( unsigned int addr, unsigned int data);
+.globl PUT32
+PUT32:
+    l.jr r9
+    l.sw 0(r3),r4
+
+r3 is the first parameter, the address, r4 the second parameter the data.
+
+unsigned int GET32 ( unsigned int addr );
+.globl GET32
+GET32:
+    l.jr r9
+    l.lwz r11,0(r3)
+
+r3 is the first/only parameter, r11 holds the return value
+
+In both cases r9 is the return address.
+
+At the time of this writing, both the simple and parallel cores are
+available and working.  In either the core_simple or core_parallel
+directory:
+
+make TEST_IMAGE=../blinker01/blinker01.bin
+
+And after it compiles, you should see something like this:
+
+Opening ../blinker01/blinker01.bin
+Loading to 0x0
+12345678
+00000000 0000E03C
+00000001 0002588C 00017850
+00000002 000495D8 00023D4C
+00000003 0006D2CC 00023CF4
+00000004 00090F88 00023CBC
+00000005 000B4C60 00023CD8
+00000006 000D8938 00023CD8
+00000007 000FC62C 00023CF4
+00000008 001202E8 00023CBC
+00000009 00143FC0 00023CD8
+12345678
+Exit
+
+if you want to create a waveform file that you can examine (might be
+pretty big) then
+
+make TEST_IMAGE=../blinker01/blinker01.bin TRACE=1
