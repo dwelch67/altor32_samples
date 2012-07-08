@@ -1,0 +1,12 @@
+
+This is for the complete systeom on chip, not just the processor.
+
+See blinker01 for toolchain information and how to run the simulator(s).
+
+I modified the peripherals to allow for the hires timer to optionally
+count to a value, interrupt and reset, and repeat.  I modified the
+interrupt controller to allow for polling of interrupts.  This example
+serves to both test and demonstrate these features.
+
+This only works on the rtl simulators (core_simple and core_parallel)
+at this time.  The software simulator does not have peripherals (yet).
