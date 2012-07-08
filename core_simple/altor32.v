@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------
-//                           AltOR32
-//              Alternative Lightweight OpenRisc
+//                           AltOR32 
+//              Alternative Lightweight OpenRisc 
 //                            V0.1
 //                     Ultra-Embedded.com
 //                   Copyright 2011 - 2012
@@ -9,34 +9,34 @@
 //
 //                       License: LGPL
 //
-// If you would like a version with a different license for use
-// in commercial projects please contact the above email address
+// If you would like a version with a different license for use 
+// in commercial projects please contact the above email address 
 // for more details.
 //-----------------------------------------------------------------
 //
 // Copyright (C) 2011 - 2012 Ultra-Embedded.com
 //
-// This source file may be used and distributed without
-// restriction provided that this copyright statement is not
-// removed from the file and that any derivative work contains
-// the original copyright notice and the associated disclaimer.
+// This source file may be used and distributed without         
+// restriction provided that this copyright statement is not    
+// removed from the file and that any derivative work contains  
+// the original copyright notice and the associated disclaimer. 
 //
-// This source file is free software; you can redistribute it
-// and/or modify it under the terms of the GNU Lesser General
-// Public License as published by the Free Software Foundation;
-// either version 2.1 of the License, or (at your option) any
-// later version.
+// This source file is free software; you can redistribute it   
+// and/or modify it under the terms of the GNU Lesser General   
+// Public License as published by the Free Software Foundation; 
+// either version 2.1 of the License, or (at your option) any   
+// later version.                                               
 //
-// This source is distributed in the hope that it will be
-// useful, but WITHOUT ANY WARRANTY; without even the implied
-// warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-// PURPOSE.  See the GNU Lesser General Public License for more
-// details.
+// This source is distributed in the hope that it will be       
+// useful, but WITHOUT ANY WARRANTY; without even the implied   
+// warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+// PURPOSE.  See the GNU Lesser General Public License for more 
+// details.                                                     
 //
-// You should have received a copy of the GNU Lesser General
-// Public License along with this source; if not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-// Boston, MA  02111-1307  USA
+// You should have received a copy of the GNU Lesser General    
+// Public License along with this source; if not, write to the 
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
+// Boston, MA  02111-1307  USA              
 //-----------------------------------------------------------------
 
 //-----------------------------------------------------------------
@@ -47,24 +47,24 @@
 //-----------------------------------------------------------------
 // Module
 //-----------------------------------------------------------------
-module altor32
-(
+module altor32 
+( 
     // General
     clk_i,
-    rst_i,
-    en_i,
-    intr_i,
-    fault_o,
+    rst_i, 
+    en_i, 
+    intr_i, 
+    fault_o, 
     break_o,
 
     // Memory Interface
-    mem_addr_o,
-    mem_data_out_o,
-    mem_data_in_i,
-    mem_wr_o,
-    mem_rd_o,
+    mem_addr_o, 
+    mem_data_out_o, 
+    mem_data_in_i, 
+    mem_wr_o, 
+    mem_rd_o, 
     mem_pause_i,
-
+    
     // Status/Debug
     dbg_pc_o
 );
@@ -72,7 +72,8 @@ module altor32
 //-----------------------------------------------------------------
 // Params
 //-----------------------------------------------------------------
-parameter [31:0]    BOOT_VECTOR     = 32'h00000100;
+parameter [31:0]    BOOT_VECTOR     = 32'h00000000;
+parameter [31:0]    ISR_VECTOR      = 32'h00000000;
 
 //-----------------------------------------------------------------
 // I/O
@@ -95,11 +96,11 @@ input               mem_pause_i /*verilator public*/;
 
 // Status/Debug
 output [31:0]       dbg_pc_o /*verilator public*/;
-
+    
 //-----------------------------------------------------------------
 // Registers
 //-----------------------------------------------------------------
-
+  
 // Current program counter
 reg [31:0] r_pc;
 
@@ -202,56 +203,60 @@ wire mem_rd_o;
 // ALU
 altor32_alu alu
 (
-    .input_a(alu_a),
-    .input_b(alu_b),
-    .func(alu_func),
+    .input_a(alu_a), 
+    .input_b(alu_b), 
+    .func(alu_func), 
     .result(alu_result)
 );
 
 // Register file
+//`ifdef CONF_TARGET_SIM
 altor32_regfile_sim
+//`else
+//altor32_regfile_xil
+//`endif
 reg_bank
 (
     // Clocking
-    .clk_i(clk_i),
-    .rst_i(rst_i),
-    .en_i(1'b1),
-    .wr_i(r_writeback),
-
+    .clk_i(clk_i), 
+    .rst_i(rst_i), 
+    .en_i(1'b1), 
+    .wr_i(r_writeback), 
+    
     // Tri-port
-    .rs_i(r_ra),
-    .rt_i(r_rb),
-    .rd_i(r_rd_wb),
-    .reg_rs_o(r_reg_ra),
-    .reg_rt_o(r_reg_rb),
+    .rs_i(r_ra), 
+    .rt_i(r_rb), 
+    .rd_i(r_rd_wb), 
+    .reg_rs_o(r_reg_ra), 
+    .reg_rt_o(r_reg_rb), 
     .reg_rd_i(r_reg_rd)
 );
 
 //-------------------------------------------------------------------
 // Decode: Decode instruction
-//-------------------------------------------------------------------
-always @ (posedge clk_i or posedge rst_i)
-begin
-   if (rst_i)
-   begin
-       r_opcode <= 32'h00000000;
-       r_rd     <= 5'b00000;
-       r_ra     <= 5'b00000;
-       r_rb     <= 5'b00000;
+//-------------------------------------------------------------------       
+always @ (posedge clk_i or posedge rst_i) 
+begin 
+   if (rst_i) 
+   begin 
+       r_opcode	<= 32'h00000000;
+       r_rd		<= 5'b00000;
+       r_ra		<= 5'b00000;
+       r_rb		<= 5'b00000;
    end
    // Instruction fetch cycle
    else if ((en_i == 1'b1) && (r_state == STATE_FETCH))
-   begin
-       // Decode opcode in-order to perform register accesses
+   begin 
+       // Decode opcode in-order to perform register accesses  
        r_opcode <= mem_data_in_i;
-       r_rd     <= mem_data_in_i[25:21];
-       r_ra     <= mem_data_in_i[20:16];
-       r_rb     <= mem_data_in_i[15:11];
-
-`ifdef CONF_CORE_DEBUG
+       r_rd		<= mem_data_in_i[25:21];
+       r_ra		<= mem_data_in_i[20:16];
+       r_rb		<= mem_data_in_i[15:11];
+       
+`ifdef CONF_CORE_DEBUG           
        $display("%08x: Fetch 0x%08x", r_pc, mem_data_in_i);
-`endif
-   end
+`endif	  	       
+   end 
 end
 
 //-------------------------------------------------------------------
@@ -290,50 +295,50 @@ reg v_jmp;
 reg v_write_rd;
 reg v_mem_access;
 
-always @ (posedge clk_i or posedge rst_i)
-begin
-   if (rst_i == 1'b1)
-   begin
-       r_pc                 <= BOOT_VECTOR;
-       r_pc_next            <= BOOT_VECTOR;
-
+always @ (posedge clk_i or posedge rst_i) 
+begin 
+   if (rst_i == 1'b1) 
+   begin 
+       r_pc                 <= BOOT_VECTOR + `VECTOR_RESET;
+       r_pc_next            <= BOOT_VECTOR + `VECTOR_RESET;
+       
        r_epc                <= 32'h00000000;
        r_sr                 <= 32'h00000000;
-       r_esr                <= 32'h00000000;
+       r_esr                <= 32'h00000000;       
        r_rd_wb              <= 5'b00000;
-
+       
        // Default to no ALU operation
-       alu_func             <= `ALU_NONE;
-
+       alu_func             <= `ALU_NONE;       
+       
        mem_addr             <= 32'h00000000;
        mem_data_out         <= 32'h00000000;
        mem_rd               <= 1'b0;
        mem_wr               <= 4'b0000;
        mem_offset           <= 2'b00;
-
+       
        fault_o              <= 1'b0;
        break_o              <= 1'b0;
        r_mem_access         <= 1'b0;
    end
    // Enabled
    else if (en_i == 1'b1)
-   begin
-
+   begin 
+   
         r_mem_access <= 1'b0;
         mem_rd       <= 1'b0;
         mem_wr       <= 4'b0000;
         break_o      <= 1'b0;
-
+        
         // Memory stalls are not supported by this version of the core
         if (mem_pause_i == 1'b1)
         begin
             fault_o <= 1'b1;
 `ifdef CONF_CORE_DEBUG
             $display("Memory pause not supported on this implementation!");
-`endif
+`endif         
         end
-
-        // Execute stage?
+   
+        // Execute stage?            
         if (r_state == STATE_EXECUTE)
         begin
 
@@ -344,7 +349,7 @@ begin
                 fault_o <= 1'b1;
            else
                 $display("%08x: Execute 0x%08x", r_pc, r_opcode);
-`endif
+`endif           
 
            v_exception          = 1'b0;
            v_vector             = 32'h00000000;
@@ -353,7 +358,7 @@ begin
            v_write_rd           = 1'b0;
            v_sr                 = r_sr;
            v_mem_access         = 1'b0;
-
+           
            // Decode opcode
            v_mem_data_in        = r_opcode;
            v_inst               = {2'b00,v_mem_data_in[31:26]};
@@ -365,181 +370,181 @@ begin
            v_shift_op           = v_mem_data_in[7:6];
            v_target             = sign_extend_imm26(v_mem_data_in[25:0]);
            v_store_imm          = sign_extend_imm16({v_mem_data_in[25:21],v_mem_data_in[10:0]});
-
+           
            // Signed & unsigned imm -> 32-bits
            v_imm                = v_mem_data_in[15:0];
            v_imm_int32          = sign_extend_imm16(v_imm);
            v_imm_uint32         = extend_imm16(v_imm);
-
+           
            // Load register[ra]
            v_reg_ra             = r_reg_ra;
-
+           
            // Load register[rb]
            v_reg_rb             = r_reg_rb;
-
+           
            // Shift ammount (from register[rb])
-           v_shift_val          = {27'b00,v_reg_rb[4:0]};
+           v_shift_val          = {26'b00,v_reg_rb[5:0]};
 
            // Shift ammount (from immediate)
-           v_shift_imm          = {27'b00,v_imm[4:0]};
-
+           v_shift_imm          = {26'b00,v_imm[5:0]};
+           
            // MTSPR/MFSPR operand
            v_mxspr_imm          =  (v_reg_ra[15:0] | {5'b000000,v_mem_data_in[10:0]});
-
+           
            // Zero result
            v_reg_result         = 32'h00000000;
-
+           
            // Update PC to next value
            v_pc                 = r_pc_next;
-
+           
            // Increment next PC value (might be overriden by branch)
-           v_pc_next            = r_pc_next + 4;
-
+           v_pc_next            = r_pc_next + 4;       
+           
            // Default target is r_rd
-           r_rd_wb              <= r_rd;
-
+           r_rd_wb              <= r_rd;       
+           
            // Default to no ALU operation
-           alu_func             <= `ALU_NONE;
-
+           alu_func             <= `ALU_NONE;      
+           
            // Execute instruction
            case (v_inst)
-               `INST_OR32_ALU :
+               `INST_OR32_ALU : 
                begin
                    case (v_alu_op)
                        `INST_OR32_ADD: // l.add
-                       begin
+                       begin 
                            alu_func <= `ALU_ADD;
                            alu_a <= v_reg_ra;
                            alu_b <= v_reg_rb;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_AND: // l.and
-                       begin
+                       begin 
                            alu_func <= `ALU_AND;
                            alu_a <= v_reg_ra;
                            alu_b <= v_reg_rb;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_OR: // l.or
-                       begin
+                       begin 
                            alu_func <= `ALU_OR;
                            alu_a <= v_reg_ra;
                            alu_b <= v_reg_rb;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_SLL: // l.sll
-                       begin
+                       begin 
                            alu_func <= `ALU_SHIFTL;
                            alu_a <= v_reg_ra;
                            alu_b <= v_shift_val;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_SRA: // l.sra
-                       begin
+                       begin 
                            alu_func <= `ALU_SHIRTR_ARITH;
                            alu_a <= v_reg_ra;
                            alu_b <= v_shift_val;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_SRL: // l.srl
-                       begin
+                       begin 
                            alu_func <= `ALU_SHIFTR;
                            alu_a <= v_reg_ra;
                            alu_b <= v_shift_val;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_SUB: // l.sub
-                       begin
+                       begin 
                            alu_func <= `ALU_SUB;
                            alu_a <= v_reg_ra;
                            alu_b <= v_reg_rb;
                            v_write_rd = 1'b1;
-                       end
-
+                       end                       
+                       
                        `INST_OR32_XOR: // l.xor
-                       begin
+                       begin 
                            alu_func <= `ALU_XOR;
                            alu_a <= v_reg_ra;
                            alu_b <= v_reg_rb;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        default:
-                       begin
+                       begin 
                            fault_o <= 1'b1;
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_ILLEGAL_INST;
+                           v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                        end
                    endcase
                end
-
+               
                `INST_OR32_ADDI: // l.addi
-               begin
+               begin 
                    alu_func <= `ALU_ADD;
                    alu_a <= v_reg_ra;
                    alu_b <= v_imm_int32;
                    v_write_rd = 1'b1;
                end
-
+               
                `INST_OR32_ANDI: // l.andi
-               begin
+               begin 
                    alu_func <= `ALU_AND;
                    alu_a <= v_reg_ra;
                    alu_b <= v_imm_uint32;
                    v_write_rd = 1'b1;
-               end
-
+               end           
+               
                `INST_OR32_BF: // l.bf
                begin
                    if (v_sr[`OR32_SR_F] == 1'b1)
                         v_branch = 1'b1;
                end
-
+               
                `INST_OR32_BNF: // l.bnf
                begin
                    if (v_sr[`OR32_SR_F] == 1'b0)
                         v_branch = 1'b1;
                end
-
+               
                `INST_OR32_J: // l.j
                begin
                    v_branch = 1'b1;
-               end
-
+               end           
+               
                `INST_OR32_JAL: // l.jal
-               begin
+               begin 
                    v_reg_result = v_pc_next;
                    v_write_rd = 1'b1;
                    r_rd_wb <= 5'b01001; // Write to REG_9_LR
-
+                   
                    v_branch = 1'b1;
                end
-
+              
               `INST_OR32_JALR: // l.jalr
-               begin
+               begin 
                    v_reg_result = v_pc_next;
                    v_write_rd = 1'b1;
                    r_rd_wb <= 5'b01001; // Write to REG_9_LR
-
+                   
                    v_pc_next = v_reg_rb;
                    v_jmp = 1;
                end
-
+        
               `INST_OR32_JR: // l.jr
-               begin
+               begin 
                    v_pc_next = v_reg_rb;
                    v_jmp = 1;
-               end
-
-               // l.lbs l.lhs l.lws l.lbz l.lhz l.lwz
+               end          
+              
+               // l.lbs l.lhs l.lws l.lbz l.lhz l.lwz          
                `INST_OR32_LBS, `INST_OR32_LHS, `INST_OR32_LWS, `INST_OR32_LBZ, `INST_OR32_LHZ, `INST_OR32_LWZ :
-               begin
+               begin 
                    v_mem_addr = (v_reg_ra + v_imm_int32);
                    mem_addr <= {v_mem_addr[31:2],2'b00};
                    mem_data_out <= 32'h00000000;
@@ -547,90 +552,90 @@ begin
                    mem_offset <= v_mem_addr[1:0];
                    v_write_rd = 1'b1;
                    v_mem_access = 1'b1;
-               end
-
+               end          
+              
               `INST_OR32_MFSPR: // l.mfspr
-              begin
+              begin 
                    case (v_mxspr_imm)
                        // SR - Supervision register
                        `SPR_REG_SR:
-                       begin
+                       begin 
                            v_reg_result = v_sr;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        // EPCR - EPC Exception saved PC
                        `SPR_REG_EPCR:
-                       begin
+                       begin 
                            v_reg_result = r_epc;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        // ESR - Exception saved SR
                        `SPR_REG_ESR:
-                       begin
+                       begin 
                            v_reg_result = r_esr;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        default:
-                       begin
+                       begin 
                            fault_o <= 1'b1;
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_ILLEGAL_INST;
+                           v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                        end
-                   endcase
-               end
-
+                   endcase          
+               end              
+                     
               `INST_OR32_MTSPR: // l.mtspr
-              begin
+              begin 
                    case (v_mxspr_imm)
                        // SR - Supervision register
                        `SPR_REG_SR:
-                       begin
+                       begin 
                            v_sr = v_reg_rb;
                        end
-
+                       
                        // EPCR - EPC Exception saved PC
                        `SPR_REG_EPCR:
-                       begin
+                       begin 
                            r_epc <= v_reg_rb;
                        end
-
+                       
                        // ESR - Exception saved SR
                        `SPR_REG_ESR:
-                       begin
+                       begin 
                            r_esr <= v_reg_rb;
                        end
-
+                       
                        default:
-                       begin
+                       begin 
                            fault_o <= 1'b1;
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_ILLEGAL_INST;
+                           v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                        end
-                   endcase
-               end
-
-               `INST_OR32_MOVHI: // l.movhi
-               begin
+                   endcase          
+               end                 
+              
+               `INST_OR32_MOVHI: // l.movhi 
+               begin 
                    v_reg_result = {v_imm,16'h0000};
                    v_write_rd = 1'b1;
-               end
-
+               end          
+              
                `INST_OR32_NOP: // l.nop
-               begin
-
-               end
-
+               begin 
+                  
+               end              
+              
                `INST_OR32_ORI: // l.ori
-               begin
+               begin 
                    alu_func <= `ALU_OR;
                    alu_a <= v_reg_ra;
                    alu_b <= v_imm_uint32;
                    v_write_rd = 1'b1;
-               end
-
+               end          
+              
                `INST_OR32_RFE: // l.rfe
                begin
                     // TODO: This instruction should not have a delay slot
@@ -638,342 +643,342 @@ begin
                     v_pc_next = r_epc;
                     v_sr      = r_esr;
                     v_jmp     = 1;
-               end
-
+               end                 
+              
               `INST_OR32_SHIFTI :
-              begin
+              begin 
                    case (v_shift_op)
                        `INST_OR32_SLLI: // l.slli
-                       begin
+                       begin 
                            alu_func <= `ALU_SHIFTL;
                            alu_a <= v_reg_ra;
                            alu_b <= v_shift_imm;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_SRAI: // l.srai
-                       begin
+                       begin 
                            alu_func <= `ALU_SHIRTR_ARITH;
                            alu_a <= v_reg_ra;
                            alu_b <= v_shift_imm;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        `INST_OR32_SRLI: // l.srli
-                         begin
+                         begin 
                            alu_func <= `ALU_SHIFTR;
                            alu_a <= v_reg_ra;
                            alu_b <= v_shift_imm;
                            v_write_rd = 1'b1;
                        end
-
+                       
                        default:
-                       begin
+                       begin 
                            fault_o <= 1'b1;
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_ILLEGAL_INST;
+                           v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                        end
-                   endcase
+                   endcase          
                end
-
-               `INST_OR32_SB:
-               begin
+               
+               `INST_OR32_SB: 
+               begin 
                    v_mem_addr = (v_reg_ra + v_store_imm);
                    mem_addr <= {v_mem_addr[31:2],2'b00};
                    case (v_mem_addr[1:0])
-                       2'b00 :
-                       begin
+                       2'b00 : 
+                       begin 
                            mem_data_out <= {v_reg_rb[7:0],24'h000000};
                            mem_wr <= 4'b1000;
                            v_mem_access = 1'b1;
                        end
-                       2'b01 :
-                       begin
+                       2'b01 : 
+                       begin 
                            mem_data_out <= {{8'h00,v_reg_rb[7:0]},16'h0000};
                            mem_wr <= 4'b0100;
                            v_mem_access = 1'b1;
                        end
-                       2'b10 :
-                       begin
+                       2'b10 : 
+                       begin 
                            mem_data_out <= {{16'h0000,v_reg_rb[7:0]},8'h00};
                            mem_wr <= 4'b0010;
                            v_mem_access = 1'b1;
                        end
-                       2'b11 :
-                       begin
+                       2'b11 : 
+                       begin 
                            mem_data_out <= {24'h000000,v_reg_rb[7:0]};
                            mem_wr <= 4'b0001;
                            v_mem_access = 1'b1;
                        end
-                       default :
-                       begin
+                       default : 
+                       begin 
                            mem_data_out <= 32'h00000000;
                            mem_wr <= 4'b0000;
                        end
                    endcase
-               end
-
+               end          
+              
               `INST_OR32_SFXX, `INST_OR32_SFXXI:
               begin
                    case (v_sfxx_op)
                        `INST_OR32_SFEQ: // l.sfeq
-                       begin
+                       begin 
                             if (v_reg_ra == v_reg_rb)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
                                 v_sr[`OR32_SR_F] = 1'b0;
                        end
-
+                       
                        `INST_OR32_SFEQI: // l.sfeqi
-                       begin
+                       begin 
                             if (v_reg_ra == v_imm_int32)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
                                 v_sr[`OR32_SR_F] = 1'b0;
                        end
-
+                       
                        `INST_OR32_SFGES: // l.sfges
-                       begin
+                       begin 
                             if (greater_than_equal_signed(v_reg_ra, v_reg_rb) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFGESI: // l.sfgesi
-                       begin
+                       begin 
                             if (greater_than_equal_signed(v_reg_ra, v_imm_int32) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFGEU: // l.sfgeu
-                       begin
+                       begin 
                             if (v_reg_ra >= v_reg_rb)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0;                        
                        end
-
+                       
                        `INST_OR32_SFGEUI: // l.sfgeui
-                       begin
+                       begin 
                             if (v_reg_ra >= v_imm_uint32)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFGTS: // l.sfgts
-                       begin
+                       begin 
                             if (greater_than_signed(v_reg_ra, v_reg_rb) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFGTSI: // l.sfgtsi
-                       begin
+                       begin 
                             if (greater_than_signed(v_reg_ra, v_imm_int32) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFGTU: // l.sfgtu
-                       begin
+                       begin 
                             if (v_reg_ra > v_reg_rb)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFGTUI: // l.sfgtui
-                       begin
+                       begin 
                             if (v_reg_ra > v_imm_uint32)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLES: // l.sfles
-                       begin
+                       begin 
                             if (less_than_equal_signed(v_reg_ra, v_reg_rb) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLESI: // l.sflesi
-                       begin
+                       begin 
                             if (less_than_equal_signed(v_reg_ra, v_imm_int32) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLEU: // l.sfleu
-                       begin
+                       begin 
                             if (v_reg_ra <= v_reg_rb)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLEUI: // l.sfleui
-                       begin
+                       begin 
                             if (v_reg_ra <= v_imm_uint32)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLTS: // l.sflts
-                       begin
+                       begin 
                             if (less_than_signed(v_reg_ra, v_reg_rb) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0;                             
                        end
-
+                       
                        `INST_OR32_SFLTSI: // l.sfltsi
-                       begin
+                       begin 
                             if (less_than_signed(v_reg_ra, v_imm_int32) == 1'b1)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLTU: // l.sfltu
-                       begin
+                       begin 
                             if (v_reg_ra < v_reg_rb)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFLTUI: // l.sfltui
-                       begin
+                       begin 
                             if (v_reg_ra < v_imm_uint32)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
-                                v_sr[`OR32_SR_F] = 1'b0;
+                                v_sr[`OR32_SR_F] = 1'b0; 
                        end
-
+                       
                        `INST_OR32_SFNE: // l.sfne
-                       begin
+                       begin 
                             if (v_reg_ra != v_reg_rb)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
                                 v_sr[`OR32_SR_F] = 1'b0;
                        end
-
+                       
                        `INST_OR32_SFNEI: // l.sfnei
-                       begin
+                       begin 
                             if (v_reg_ra != v_imm_int32)
                                 v_sr[`OR32_SR_F] = 1'b1;
                             else
                                 v_sr[`OR32_SR_F] = 1'b0;
-                       end
-
+                       end                                                                     
+                       
                        default:
-                       begin
+                       begin 
                            fault_o <= 1'b1;
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_ILLEGAL_INST;
+                           v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                        end
-                   endcase
+                   endcase          
                end
-
+               
                `INST_OR32_SH: // l.sh
-               begin
+               begin 
                    v_mem_addr = (v_reg_ra + v_store_imm);
                    mem_addr <= {v_mem_addr[31:2],2'b00};
                    case (v_mem_addr[1:0])
-                       2'b00 :
-                       begin
+                       2'b00 : 
+                       begin 
                            mem_data_out <= {v_reg_rb[15:0],16'h0000};
                            mem_wr <= 4'b1100;
                            v_mem_access = 1'b1;
                        end
-                       2'b10 :
-                       begin
+                       2'b10 : 
+                       begin 
                            mem_data_out <= {16'h0000,v_reg_rb[15:0]};
                            mem_wr <= 4'b0011;
                            v_mem_access = 1'b1;
                        end
-                       default :
-                       begin
+                       default : 
+                       begin 
                            mem_data_out <= 32'h00000000;
                            mem_wr <= 4'b0000;
                        end
                    endcase
                end
-
+               
                `INST_OR32_SW: // l.sw
-               begin
+               begin 
                    v_mem_addr = (v_reg_ra + v_store_imm);
                    mem_addr <= {v_mem_addr[31:2],2'b00};
                    mem_data_out <= v_reg_rb;
                    mem_wr <= 4'b1111;
                    v_mem_access = 1'b1;
-               end
-
+               end           
+               
               `INST_OR32_MISC:
               begin
                    case (v_mem_data_in[31:24])
                        `INST_OR32_SYS: // l.sys
-                       begin
+                       begin 
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_SYSCALL;
+                           v_vector = ISR_VECTOR + `VECTOR_SYSCALL;
                        end
-
+                       
                        `INST_OR32_TRAP: // l.trap
-                       begin
+                       begin 
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_TRAP;
+                           v_vector = ISR_VECTOR + `VECTOR_TRAP;
                            break_o <= 1'b1;
                        end
-
-                       default :
-                       begin
+                       
+                       default : 
+                       begin 
                            fault_o <= 1'b1;
                            v_exception = 1'b1;
-                           v_vector = `VECTOR_ILLEGAL_INST;
+                           v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                        end
-                   endcase
+                   endcase             
                end
-
+               
                `INST_OR32_XORI: // l.xori
-               begin
+               begin 
                    alu_func <= `ALU_XOR;
                    alu_a <= v_reg_ra;
                    alu_b <= v_imm_int32;
                    v_write_rd = 1'b1;
                end
-
-               default :
-               begin
+               
+               default : 
+               begin 
                    fault_o <= 1'b1;
                    v_exception = 1'b1;
-                   v_vector = `VECTOR_ILLEGAL_INST;
+                   v_vector = ISR_VECTOR + `VECTOR_ILLEGAL_INST;
                end
            endcase
-
+           
            // Handle branches
-           if (v_branch == 1'b1)
-           begin
+           if (v_branch == 1'b1) 
+           begin 
                v_offset         = {v_target[29:0],2'b00};
                v_pc_next        = (r_pc + v_offset);
            end
            // If not branching, handle interrupts / exceptions
            else if (v_jmp == 1'b0)
-           begin
-
+           begin 
+           
                // Exception (Fault/Syscall/Break)
-               if (v_exception == 1'b1)
-               begin
-
+               if (v_exception == 1'b1) 
+               begin 
+               
                     // Save PC & SR
                     r_epc <= v_pc;
                     r_esr <= v_sr;
@@ -986,8 +991,8 @@ begin
                     v_sr = 0;
                end
                // External interrupt (and not handling an exception or branch)?
-               else if ((intr_i == 1'b1) && (v_sr[`OR32_SR_IEE] == 1'b1))
-               begin
+               else if ((intr_i == 1'b1) && (v_sr[`OR32_SR_IEE] == 1'b1)) 
+               begin 
                     // Save PC & SR
                     r_epc <= v_pc;
                     r_esr <= v_sr;
@@ -999,7 +1004,7 @@ begin
                     // Disable further interrupts
                     v_sr = 0;
                end
-           end
+           end 
 
            // Update registers with variable values
            r_pc         <= v_pc;
@@ -1007,127 +1012,127 @@ begin
            r_sr         <= v_sr;
            r_reg_result <= v_reg_result;
            r_mem_access <= v_mem_access;
-
+           
            // No writeback required?
            if (v_write_rd == 1'b0)
            begin
                // Target register is R0 which is read-only
                r_rd_wb <= 5'b00000;
-           end
+           end                
      end
    end
 end
 
 //-------------------------------------------------------------------
 // Writeback
-//-------------------------------------------------------------------
+//-------------------------------------------------------------------   
 reg [31:0] wb_v_reg_result;
 reg [7:0] wb_v_inst;
 
 always @ (posedge clk_i or posedge rst_i)
-begin
+begin 
    if (rst_i == 1'b1)
    begin
        r_writeback <= 1'b1;
    end
    // Enabled
    else if (en_i == 1'b1)
-   begin
+   begin 
        r_writeback <= 1'b0;
-
+       
        // Writeback stage?
        if (r_state == STATE_WRITEBACK)
-       begin
-
+       begin 
+       
            wb_v_reg_result = r_reg_result;
-
+           
            // Handle delayed result instructions
            wb_v_inst = {2'b00,r_opcode[31:26]};
            case (wb_v_inst)
                `INST_OR32_LBS: // l.lbs
-               begin
+               begin 
                    case (mem_offset)
-                       2'b00 :
+                       2'b00 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[31:24]};
-                       2'b01 :
+                       2'b01 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[23:16]};
-                       2'b10 :
+                       2'b10 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[15:8]};
-                       2'b11 :
+                       2'b11 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[7:0]};
-                       default :
+                       default : 
                             wb_v_reg_result = 32'h00000000;
                    endcase
-
+                   
                    // Sign extend LB
                    if (wb_v_reg_result[7] == 1'b1)
                         wb_v_reg_result = {24'hFFFFFF,wb_v_reg_result[7:0]};
                end
-
+               
                `INST_OR32_LBZ: // l.lbz
                    case (mem_offset)
-                       2'b00 :
+                       2'b00 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[31:24]};
-                       2'b01 :
+                       2'b01 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[23:16]};
-                       2'b10 :
+                       2'b10 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[15:8]};
-                       2'b11 :
+                       2'b11 : 
                             wb_v_reg_result = {24'h000000,mem_data_in_i[7:0]};
-                       default :
+                       default : 
                             wb_v_reg_result = 32'h00000000;
                    endcase
-
+                   
                `INST_OR32_LHS: // l.lhs
-               begin
+               begin 
                    case (mem_offset)
-                       2'b00 :
+                       2'b00 : 
                             wb_v_reg_result = {16'h0000,mem_data_in_i[31:16]};
-                       2'b10 :
+                       2'b10 : 
                             wb_v_reg_result = {16'h0000,mem_data_in_i[15:0]};
-                       default :
+                       default : 
                             wb_v_reg_result = 32'h00000000;
                    endcase
-
+                   
                    // Sign extend LH
                    if (wb_v_reg_result[15] == 1'b1)
                         wb_v_reg_result = {16'hFFFF,wb_v_reg_result[15:0]};
                end
-
+               
                `INST_OR32_LHZ: // l.lhz
                    case (mem_offset)
-                       2'b00 :
+                       2'b00 : 
                             wb_v_reg_result = {16'h0000,mem_data_in_i[31:16]};
-                       2'b10 :
+                       2'b10 : 
                             wb_v_reg_result = {16'h0000,mem_data_in_i[15:0]};
-                       default :
+                       default : 
                             wb_v_reg_result = 32'h00000000;
                    endcase
-
+                                    
                `INST_OR32_LWZ, `INST_OR32_LWS: // l.lwz l.lws
                     wb_v_reg_result = mem_data_in_i;
-
-               default :
+                    
+               default : 
                     wb_v_reg_result = r_reg_result;
            endcase
-
+           
            // Result from memory / other
            if (alu_func == `ALU_NONE)
            begin
                r_reg_rd <= wb_v_reg_result;
            end
            // Result from ALU
-           else
+           else 
            begin
                r_reg_rd <= alu_result;
            end
-
+           
            // Register writeback required?
            if (r_rd_wb != 5'b00000)
            begin
                r_writeback <= 1'b1;
-
-`ifdef CONF_CORE_DEBUG
+               
+`ifdef CONF_CORE_DEBUG               
            if (alu_func == `ALU_NONE)
                 $display("%08x: Writeback R%d = 0x%08x", r_pc, r_rd_wb, wb_v_reg_result);
            else
@@ -1136,52 +1141,52 @@ begin
            end
        end
    end
-end
+end 
 
 //-------------------------------------------------------------------
 // Cycle Control
-//-------------------------------------------------------------------
+//-------------------------------------------------------------------       
 always @ (posedge clk_i or posedge rst_i)
-begin
-   if (rst_i)
+begin 
+   if (rst_i) 
    begin
        r_state <= STATE_RESET;
    end
-   else if (en_i == 1'b1)
-   begin
+   else if (en_i == 1'b1) 
+   begin 
        case (r_state)
            STATE_RESET :
            begin
                 r_state <= STATE_WRITEBACK;
            end
-           STATE_FETCH :
+           STATE_FETCH : 
            begin
-                r_state <= STATE_EXECUTE;
+                r_state <= STATE_EXECUTE;				    
            end
-           STATE_EXECUTE :
+           STATE_EXECUTE : 
            begin
                 r_state <= STATE_MEMORY;
            end
            STATE_MEMORY:
            begin
                 r_state <= STATE_WRITEBACK;
-           end
-           STATE_WRITEBACK :
+           end		   
+           STATE_WRITEBACK : 
            begin
                 r_state <= STATE_FETCH;
            end
-           default :
+           default : 
            begin
                 r_state <= STATE_RESET;
            end
        endcase
-   end
-end
-
+   end 
+end 
+   
 //-------------------------------------------------------------------
 // Combinatorial
-//-------------------------------------------------------------------
-
+//------------------------------------------------------------------- 
+   
 // Memory access mux
 assign mem_addr_o           = (r_mem_access == 1'b1) ? mem_addr : r_pc;
 assign mem_data_out_o       = (r_mem_access == 1'b1) ? mem_data_out : 32'h00000000;
@@ -1190,6 +1195,6 @@ assign mem_wr_o             = mem_wr;
 
 assign dbg_pc_o             = r_pc;
 
-`include "altor32_funcs.v"
-
+`include "altor32_funcs.v"    
+    
 endmodule

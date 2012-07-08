@@ -60,7 +60,11 @@ module top
     dbg_pc_o,
     // UART output
     uart_data_o,
-    uart_wr_o
+    uart_wr_o,
+    flash_cs_o,
+    flash_si_o,
+    flash_so_i,
+    flash_sck_o
 );
 
 //-----------------------------------------------------------------
@@ -83,6 +87,10 @@ output [31:0]       dbg_reg_out_o /*verilator public*/;
 output [31:0]       dbg_pc_o /*verilator public*/;
 output [7:0]        uart_data_o /*verilator public*/;
 output              uart_wr_o /*verilator public*/;
+output              flash_cs_o /*verilator public*/;
+output              flash_si_o /*verilator public*/;
+input               flash_so_i /*verilator public*/;
+output              flash_sck_o /*verilator public*/;
 
 //-----------------------------------------------------------------
 // Registers / Wires
@@ -98,10 +106,7 @@ wire [31:0]         int_mem_data_o;
 wire [31:0]         int_mem_data_i;
 wire [3:0]          int_mem_wr_o;
 
-wire              flash_cs_o;
-wire              flash_si_o;
-reg               flash_so_i;
-wire              flash_sck_o;
+
 
 //-----------------------------------------------------------------
 // Instantiation
@@ -126,8 +131,8 @@ alt_soc
     .UART_BAUD(115200),
     .EXTERNAL_INTERRUPTS(1),
     .CORE_ID(32'h00000000),
-    .BOOT_VECTOR(32'h00002000),
-    .ISR_VECTOR(32'h0000203C)
+    .BOOT_VECTOR(32'h00000000),
+    .ISR_VECTOR(32'h00000000)
 )
 u1_cpu
 (
@@ -138,13 +143,6 @@ u1_cpu
     .ext_intr_i(intr_i),
     .fault_o(fault_o),
     .break_o(break_o),
-
-
-.flash_cs_o (flash_cs_o ),
-.flash_si_o (flash_si_o ),
-.flash_so_i (flash_so_i ),
-.flash_sck_o(flash_sck_o),
-
 
     // UART
     .uart_tx_o(/* open */),
@@ -158,6 +156,14 @@ u1_cpu
     .int_mem_rd_o(/*open */),
     .int_mem_pause_i(1'b0),
 
+    // External Memory
+    .ext_mem_addr_o(/*open */),
+    .ext_mem_data_o(/*open */),
+    .ext_mem_data_i(32'h00000000),
+    .ext_mem_wr_o(/*open */),
+    .ext_mem_rd_o(/*open */),
+    .ext_mem_pause_i(1'b0),
+
     // External I/O or Memory
     .ext_io_addr_o(/*open */),
     .ext_io_data_o(/*open */),
@@ -165,6 +171,12 @@ u1_cpu
     .ext_io_wr_o(/*open */),
     .ext_io_rd_o(/*open */),
     .ext_io_pause_i(1'b0),
+
+    // SPI Flash
+    .flash_cs_o(flash_cs_o),
+    .flash_si_o(flash_si_o),
+    .flash_so_i(flash_so_i),
+    .flash_sck_o(flash_sck_o),
 
     // Debug Access
     .dbg_pc_o(dbg_pc_o),

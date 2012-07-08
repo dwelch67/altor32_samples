@@ -40,40 +40,53 @@
 //-----------------------------------------------------------------
 
 //-----------------------------------------------------------------
-// Memory Map
+// Includes
 //-----------------------------------------------------------------
-`define MEM_REGION_INTERNAL     3'b000
-`define MEM_REGION_EXTERNAL     3'b001
-`define MEM_REGION_CORE_IO      3'b010
-`define MEM_REGION_EXT_IO       3'b011
+`include "altor32_defs.v"
+
+//-----------------------------------------------------------------
+// Module
+//-----------------------------------------------------------------
+module altor32_alu 
+( 
+    input_a, 
+    input_b, 
+    func, 
+    result 
+);
 
 //-----------------------------------------------------------------
 // I/O
 //-----------------------------------------------------------------
+input [31:0]    input_a     /*verilator public*/;
+input [31:0]    input_b     /*verilator public*/;
+input [3:0]     func        /*verilator public*/;
+output [31:0]   result      /*verilator public*/;
 
-// General
-`define CORE_ID                 8'h00
+//-----------------------------------------------------------------
+// Registers
+//-----------------------------------------------------------------
+reg [31:0]      result;
 
-// Basic Peripherals
-`define UART_USR                8'h04
-`define UART_UDR                8'h08
-`define TIMER_VAL               8'h10
-`define IRQ_MASK_SET            8'h14
-`define IRQ_MASK_STATUS         8'h14
-`define IRQ_MASK_CLR            8'h18
-`define IRQ_STATUS              8'h1C
-    `define IRQ_SYSTICK             (0)
-    `define IRQ_UART_RX_AVAIL       (1)
-    `define IRQ_SW                  (2)
-    `define IRQ_PIT                 (6)
-    `define IRQ_EXT_FIRST           (8)
+//-----------------------------------------------------------------
+// ALU
+//-----------------------------------------------------------------
+always @ (func or input_a or input_b )
+begin 
+   case (func)
+       `ALU_SHIFTL :        result = shift_left(input_a, input_b);
+       `ALU_SHIFTR :        result = shift_right(input_a, input_b);
+       `ALU_SHIRTR_ARITH:   result = shift_right_arith(input_a, input_b);
+       `ALU_ADD :           result = (input_a + input_b);
+       `ALU_SUB :           result = (input_a - input_b);
+       `ALU_AND :           result = (input_a & input_b);
+       `ALU_OR :            result = (input_a | input_b);
+       `ALU_XOR :           result = (input_a ^ input_b);
+       default : 
+            result = 32'h00000000;
+   endcase
+end
     
-`define WATCHDOG_CTRL           8'h20
-    `define WATCHDOG_EXPIRED        (16)
-    
-`define SYS_CLK_COUNT           8'h60
+`include "altor32_funcs.v"
 
-// SPI Configuration PROM
-`define SPI_PROM_CTRL           8'h70
-`define SPI_PROM_STAT           8'h70
-`define SPI_PROM_DATA           8'h74
+endmodule
