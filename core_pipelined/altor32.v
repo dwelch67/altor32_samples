@@ -967,7 +967,7 @@ begin
                    
                    `INST_OR32_SFGEUI: // l.sfgeui
                    begin 
-                        if (v_reg_ra >= v_imm_uint32)
+                        if (v_reg_ra >= v_imm_int32)
                             v_sr[`OR32_SR_F] = 1'b1;
                         else
                             v_sr[`OR32_SR_F] = 1'b0; 
@@ -999,7 +999,7 @@ begin
                    
                    `INST_OR32_SFGTUI: // l.sfgtui
                    begin 
-                        if (v_reg_ra > v_imm_uint32)
+                        if (v_reg_ra > v_imm_int32)
                             v_sr[`OR32_SR_F] = 1'b1;
                         else
                             v_sr[`OR32_SR_F] = 1'b0; 
@@ -1031,7 +1031,7 @@ begin
                    
                    `INST_OR32_SFLEUI: // l.sfleui
                    begin 
-                        if (v_reg_ra <= v_imm_uint32)
+                        if (v_reg_ra <= v_imm_int32)
                             v_sr[`OR32_SR_F] = 1'b1;
                         else
                             v_sr[`OR32_SR_F] = 1'b0; 
@@ -1063,7 +1063,7 @@ begin
                    
                    `INST_OR32_SFLTUI: // l.sfltui
                    begin 
-                        if (v_reg_ra < v_imm_uint32)
+                        if (v_reg_ra < v_imm_int32)
                             v_sr[`OR32_SR_F] = 1'b1;
                         else
                             v_sr[`OR32_SR_F] = 1'b0; 
